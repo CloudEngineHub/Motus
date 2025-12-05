@@ -96,8 +96,8 @@ We provide multiple checkpoints for different use cases:
 
 | Model | Use Case | Checkpoint Path |
 |-------|----------|-----------------|
-| **Motus_Wan2_2_5B_pretrain** | Stage 1 / Backbone | [`motus-robotics/Motus_Wan2_2_5B_pretrain`](https://huggingface.co/motus-robotics/Motus_Wan2_2_5B_pretrain) |
-| **Motus** | Stage 2 / Fine-Tuning | [`motus-robotics/Motus`](https://huggingface.co/motus-robotics/Motus) |
+| **Motus_Wan2_2_5B_pretrain** | Pretrain / VGM Backbone | [`motus-robotics/Motus_Wan2_2_5B_pretrain`](https://huggingface.co/motus-robotics/Motus_Wan2_2_5B_pretrain) |
+| **Motus** |  Fine-Tuning | [`motus-robotics/Motus`](https://huggingface.co/motus-robotics/Motus) |
 | **Motus_robotwin2** | Inference / Fine-Tuning | [`motus-robotics/Motus_robotwin2`](https://huggingface.co/motus-robotics/Motus_robotwin2) |
 
 **Download checkpoints:**
