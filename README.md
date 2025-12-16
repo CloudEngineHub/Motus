@@ -12,7 +12,7 @@
     src="https://img.shields.io/badge/Motus-Homepage-4287f5?logo=readme&logoColor=white"/></a>
   <a href="https://huggingface.co/motus-robotics"><img alt="Hugging Face"
     src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-motus--robotics-ffc107?color=ffc107&logoColor=white"/></a>
-  <a href="https://arxiv.org/abs/2507.23523"><img alt="arXiv"
+  <a href="https://arxiv.org/abs/2512.13030"><img alt="arXiv"
     src="https://img.shields.io/badge/arXiv-2507.23523-b31b1b?logo=arxiv&logoColor=white"/></a>
   <br>
   <a href="https://motus-robotics.github.io/assets/motus/png/feishu.jpg"><img alt="Feishu"
@@ -378,13 +378,13 @@ We will collect common issues and their solutions here. If you encounter an issu
 ## Citation
 
 ```bibtex
-@misc{motus2025,
-    title={Motus: A Unified Latent Action World Model}, 
-    author={Hongzhe Bi, Hengkai Tan, Shenghao Xie, Zeyuan Wang, Shuhe Huang, Haitian Liu, Ruowen Zhao, Yao Feng, Chendong Xiang, Yinze Rong, Hongyan Zhao, Hanyu Liu, Zhizhong Su, Lei Ma, Hang Su, Jun Zhu},
-    year={2025},
-    eprint={2507.23523},
-    archivePrefix={arXiv},
-    primaryClass={cs.RO},
-    url={https://motus-robotics.github.io/motus}, 
+@misc{bi2025motusunifiedlatentaction,
+      title={Motus: A Unified Latent Action World Model}, 
+      author={Hongzhe Bi and Hengkai Tan and Shenghao Xie and Zeyuan Wang and Shuhe Huang and Haitian Liu and Ruowen Zhao and Yao Feng and Chendong Xiang and Yinze Rong and Hongyan Zhao and Hanyu Liu and Zhizhong Su and Lei Ma and Hang Su and Jun Zhu},
+      year={2025},
+      eprint={2512.13030},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2512.13030}, 
 }
 ```
