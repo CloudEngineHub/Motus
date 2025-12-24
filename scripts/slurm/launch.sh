@@ -1,13 +1,13 @@
 #!/bin/bash
 # Launcher script for SLURM jobs
-# Usage: ./scripts/bx_launch.sh [script_path]
-# Example: ./scripts/bx_launch.sh scripts/slurm_single_node.sh
+# Usage: ./scripts/launch.sh [script_path]
+# Example: ./scripts/launch.sh scripts/slurm_single_node.sh
 
 if [ $# -eq 0 ]; then
-    echo "Usage: ./scripts/bx_launch.sh [script_path]"
+    echo "Usage: ./scripts/launch.sh [script_path]"
     echo "Examples:"
-    echo "  ./scripts/bx_launch.sh scripts/slurm_single_node.sh"
-    echo "  ./scripts/bx_launch.sh scripts/slurm_multi_node.sh"
+    echo "  ./scripts/launch.sh scripts/slurm_single_node.sh"
+    echo "  ./scripts/launch.sh scripts/slurm_multi_node.sh"
     exit 1
 fi
 

@@ -1,19 +1,15 @@
 #!/bin/bash
 # SLURM script for multi-node distributed training
-# Usage: sbatch scripts/slurm_multi_node.sh
-# Resume from checkpoint: RESUME_FROM="checkpoints/robotwin/robotwin_uni_0930_pad_speed/checkpoint_step_40000" sbatch scripts/slurm_multi_node.sh
-# Finetune with pretrain: PRETRAIN_CKPT="checkpoints/latent_action/latent_action_pretrain_test/checkpoint_step_20000" sbatch scripts/slurm_multi_node.sh
 
 #SBATCH --job-name=motus_multi
-#SBATCH --output=/share/home/bhz/motus/logs_stage4/slurm_multi_%j.out
-#SBATCH --error=/share/home/bhz/motus/logs_stage4/slurm_multi_%j.err
-#SBATCH --nodes=2
-
+#SBATCH --output=/path/to/Motus/logs/slurm_multi_%j.out
+#SBATCH --error=/path/to/Motus/logs/slurm_multi_%j.err
+#SBATCH --nodes=4
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:8
 #SBATCH --cpus-per-task=256
 #SBATCH --mem=1500G
-#SBATCH --partition=emb
+#SBATCH --partition=xxx  # change here
 #SBATCH --exclusive
 
 echo "Starting multi-node job on $(hostname) at $(date)"
@@ -24,13 +20,13 @@ echo "SLURM_GPUS_ON_NODE: $SLURM_GPUS_ON_NODE"
 echo "SLURM_NODEID: $SLURM_NODEID"
 
 # Setup environment
-PROJECT_ROOT="/share/home/bhz/motus-robotics/Motus"
+PROJECT_ROOT="/path/to/Motus"
 cd $PROJECT_ROOT
 
 # Load modules and activate conda environment
 module load cuda/12.8 || echo "Warning: Could not load CUDA module"
-source /share/home/bhz/miniconda3/etc/profile.d/conda.sh
-conda activate cosmos-predict2-hb
+source /path/to/miniconda3/etc/profile.d/conda.sh
+conda activate /path/to/motus_env
 
 # Set environment variables
 export PYTHONPATH=${PROJECT_ROOT}:${PYTHONPATH}
@@ -40,6 +36,7 @@ export CUDA_HOME=$CONDA_PREFIX
 # Get node information
 nodes=$(scontrol show hostnames $SLURM_JOB_NODELIST)
 master_addr=$(echo "$nodes" | head -n 1)
+export MASTER_ADDR=$master_addr
 
 echo "NODELIST: $nodes"
 echo "MASTER_ADDR: $master_addr"
@@ -59,12 +56,12 @@ export TORCH_NCCL_ASYNC_ERROR_HANDLING=1
 export TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=1800
 
 # Create logs directory
-mkdir -p /share/home/bhz/motus/logs_stage4
+mkdir -p logs
 
-# Configuration
-MASTER_PORT=${MASTER_PORT:-29500}
+# Training Configuration - Define here to avoid duplication in worker
 CONFIG_FILE=${CONFIG_FILE:-"configs/robotwin.yaml"}
-RUN_NAME=${RUN_NAME:-"robotwin_multi"}
+RUN_NAME=${RUN_NAME:-"robotwin_test"}
+MASTER_PORT=${MASTER_PORT:-29500}
 
 echo "=========================================="
 echo "Multi-Node Training Configuration"
@@ -75,21 +72,14 @@ echo "Master addr: $master_addr"
 echo "Master port: $MASTER_PORT"
 echo "Config: $CONFIG_FILE"
 echo "Run name: $RUN_NAME"
-echo "Resume From (YAML): resume.checkpoint_path"
-echo "Finetune From (YAML): finetune.checkpoint_path"
 echo "=========================================="
 
-# Multi-node distributed training - launch torchrun on all nodes via srun
-srun torchrun \
-    --nnodes=$SLURM_JOB_NUM_NODES \
-    --nproc_per_node=$SLURM_GPUS_ON_NODE \
-    --node_rank=$SLURM_NODEID \
-    --master_addr=$master_addr \
-    --master_port=$MASTER_PORT \
-    train/train.py \
-    --deepspeed configs/zero1.json \
-    --config $CONFIG_FILE \
-    $(if [ -n "$RUN_NAME" ]; then echo "--run_name $RUN_NAME"; fi) \
-    --report_to tensorboard
+# Export configuration variables for worker script
+export CONFIG_FILE
+export RUN_NAME
+export MASTER_PORT
+
+# Multi-node distributed training - use srun to launch worker on all nodes
+srun bash scripts/slurm/multi_node_worker.sh
 
 echo "Training completed at $(date)"

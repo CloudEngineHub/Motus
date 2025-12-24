@@ -1,17 +1,16 @@
 #!/bin/bash
 # SLURM script for single node 8-GPU training
 # Usage: sbatch scripts/slurm_single_node.sh
-# Resume from checkpoint: RESUME_FROM="checkpoints/ac_one/ac_one_test_pad/checkpoint_step_45000" sbatch scripts/slurm_single_node.sh
 
 #SBATCH --job-name=motus
-#SBATCH --output=/share/home/bhz/motus/logs_stage4/slurm_single_%j.out
-#SBATCH --error=/share/home/bhz/motus/logs_stage4/slurm_single_%j.err
+#SBATCH --output=/path/to/Motus/logs/slurm_single_%j.out
+#SBATCH --error=/path/to/Motus/logs_/slurm_single_%j.err
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:8
 #SBATCH --cpus-per-task=256
 #SBATCH --mem=1500G
-#SBATCH --partition=emb
+#SBATCH --partition=xxx  # change here
 #SBATCH --exclusive
 
 echo "Starting single node job on $(hostname) at $(date)"
@@ -20,13 +19,13 @@ echo "SLURM_JOB_NODELIST: $SLURM_JOB_NODELIST"
 echo "SLURM_GPUS_ON_NODE: $SLURM_GPUS_ON_NODE"
 
 # Setup environment
-PROJECT_ROOT="/share/home/bhz/motus-robotics/Motus"
+PROJECT_ROOT="/path/to/Motus"
 cd $PROJECT_ROOT
 
 # Load modules and activate conda environment
 module load cuda/12.8 || echo "Warning: Could not load CUDA module"
-source /share/home/bhz/miniconda3/etc/profile.d/conda.sh
-conda activate cosmos-predict2-hb
+source /path/to/miniconda3/etc/profile.d/conda.sh
+conda activate /path/to/motus_env
 
 # Set environment variables
 export PYTHONPATH=${PROJECT_ROOT}:${PYTHONPATH}
@@ -55,7 +54,7 @@ export TORCH_NCCL_ASYNC_ERROR_HANDLING=1
 export TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=1800
 
 # Create logs directory (for any additional logs)
-mkdir -p /share/home/bhz/motus/logs_stage4
+mkdir -p /path/to/Motus/logs
 
 CONFIG_FILE=${CONFIG_FILE:-"configs/robotwin.yaml"}
 RUN_NAME=${RUN_NAME:-"robotwin_test"}
@@ -82,6 +81,6 @@ torchrun \
     --deepspeed configs/zero1.json \
     --config $CONFIG_FILE \
     $(if [ -n "$RUN_NAME" ]; then echo "--run_name $RUN_NAME"; fi) \
-    --report_to tensorboard
+    --report_to tensorboard \
 
 echo "Training completed at $(date)"
