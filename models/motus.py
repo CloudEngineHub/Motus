@@ -751,7 +751,6 @@ class Motus(nn.Module):
         checkpoint = torch.load(path, map_location='cpu')
         state_dict = checkpoint.get('module', checkpoint)
         
-        # Filter out incompatible layers (pretrain vs finetune mode differences)
         filtered = {}
         for k, v in state_dict.items():
             if ('action_expert.input_encoder' in k or 'action_expert.decoder' in k):
@@ -759,20 +758,7 @@ class Motus(nn.Module):
             filtered[k] = v
         
         missing, unexpected = self.load_state_dict(filtered, strict=False)
-        logger.info(f"Loaded pretrain weights: {len(filtered)} keys, {len(missing)} missing, {len(unexpected)} unexpected")
-        
-        # Verify VLM loading
-        vlm_keys_loaded = sum(1 for k in filtered.keys() if 'vlm_model' in k)
-        if vlm_keys_loaded > 0:
-            vlm_embed = self.vlm_model.get_input_embeddings().weight
-            vlm_std = vlm_embed.std().item()
-            logger.info(f"VLM: {vlm_keys_loaded} keys loaded, embedding std={vlm_std:.6f}")
-            if vlm_std > 0.1:
-                logger.warning(f"⚠️ VLM embedding std is high ({vlm_std:.4f}), might be random!")
-            else:
-                logger.info(f"✅ VLM loaded correctly")
-        else:
-            logger.warning("⚠️ No VLM keys found in checkpoint!")
+        logger.info(f"Loaded pretrain weights (filtered). Missing: {len(missing)}, Unexpected: {len(unexpected)}")
 
     def training_step(
         self,
