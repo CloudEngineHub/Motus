@@ -202,8 +202,10 @@ def create_dataset(config: OmegaConf, val: bool = False):
         # Add dataset-specific parameters
         if hasattr(config.dataset, 'dataset_dir'):
             params['dataset_dir'] = config.dataset.dataset_dir
-        if hasattr(config.dataset, 'split'):
-            params['split'] = config.dataset.split
+        if hasattr(config.dataset, 'task_mode'):
+            params['task_mode'] = config.dataset.task_mode
+        if hasattr(config.dataset, 'task_name'):
+            params['task_name'] = config.dataset.task_name
         if hasattr(config.dataset, 'max_episodes'):
             params['max_episodes'] = config.dataset.max_episodes
         if hasattr(config.dataset, 'image_aug'):

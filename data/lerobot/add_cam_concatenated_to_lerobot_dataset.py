@@ -13,8 +13,8 @@ What it does
 
 Usage example:
     python -m data.lerobot.add_cam_concatenated_to_lerobot_dataset \
-      --repo_id dump_bin_bigbin \
-      --root /share/home/lht/.cache/huggingface/lerobot/robotwin/dumpbin/dump_bin_bigbin \
+      --repo_id fold_grey_t_shirt_neatly_using_hands \
+      --root /share/home/lht/.cache/huggingface/lerobot/test_multi/fold_grey_t_shirt_neatly_using_hands \
       --overwrite false
 """
 
@@ -265,6 +265,8 @@ def _compute_video_stats(video_path: Path, fps: float, num_frames: int) -> Dict[
     Compute statistics (min, max, mean, std) for a video.
     
     Returns stats in the format expected by episodes_stats.jsonl.
+    The format should match compute_episode_stats: (C, 1, 1) for image/video features.
+    Format: {"min": [[[R]], [[G]], [[B]]], "max": ..., "mean": ..., "std": ..., "count": [N]}
     """
     # Sample frames to reduce computation
     sampled_indices = sample_indices(num_frames)
@@ -272,17 +274,31 @@ def _compute_video_stats(video_path: Path, fps: float, num_frames: int) -> Dict[
     
     # Decode sampled frames
     frames = decode_video_frames(video_path, timestamps, tolerance_s=1.0 / fps, backend="pyav")
-    # frames is [T, C, H, W] float in [0, 1]
+    # frames is [T, C, H, W] float in [0, 1] (channel_first format)
     
-    # Convert to numpy and compute stats
-    frames_np = frames.permute(0, 2, 3, 1).cpu().numpy()  # [T, H, W, C]
+    # Convert to numpy, keeping channel_first format [T, C, H, W]
+    frames_np = frames.cpu().numpy()  # [T, C, H, W]
+    
     # Compute stats over (time, height, width) axes, keeping channel dim
+    # Use axis=(0, 2, 3) to reduce over time, height, width, keeping channel
+    # keepdims=True gives [1, C, 1, 1], then squeeze first dim to get [C, 1, 1]
+    min_arr = np.squeeze(np.min(frames_np, axis=(0, 2, 3), keepdims=True), axis=0)  # [C, 1, 1]
+    max_arr = np.squeeze(np.max(frames_np, axis=(0, 2, 3), keepdims=True), axis=0)  # [C, 1, 1]
+    mean_arr = np.squeeze(np.mean(frames_np, axis=(0, 2, 3), keepdims=True), axis=0)  # [C, 1, 1]
+    std_arr = np.squeeze(np.std(frames_np, axis=(0, 2, 3), keepdims=True), axis=0)  # [C, 1, 1]
+    
+    # Convert to nested list format: [[[R]], [[G]], [[B]]]
+    # Shape [C, 1, 1] -> [[[R]], [[G]], [[B]]]
+    def to_nested_list(arr):
+        """Convert [C, 1, 1] array to [[[R]], [[G]], [[B]]] format."""
+        return [[[float(arr[c, 0, 0])]] for c in range(arr.shape[0])]
+    
     stats = {
-        "min": np.min(frames_np, axis=(0, 1, 2), keepdims=True).tolist(),  # [[[R]], [[G]], [[B]]]
-        "max": np.max(frames_np, axis=(0, 1, 2), keepdims=True).tolist(),
-        "mean": np.mean(frames_np, axis=(0, 1, 2), keepdims=True).tolist(),
-        "std": np.std(frames_np, axis=(0, 1, 2), keepdims=True).tolist(),
-        "count": [len(sampled_indices)],
+        "min": to_nested_list(min_arr),
+        "max": to_nested_list(max_arr),
+        "mean": to_nested_list(mean_arr),
+        "std": to_nested_list(std_arr),
+        "count": [len(sampled_indices)],  # [N] format
     }
     
     return stats
@@ -586,6 +602,45 @@ def main():
                 skipped += 1
     
     print(f"\nDone. Processed: {processed}, Skipped: {skipped}")
+    
+    # If shape is still None, try to get it from any existing video as a last resort
+    if concatenated_shape is None:
+        print("Attempting to get shape from any existing concatenated video...")
+        for ep_idx in episodes_to_process:
+            chunk_num = _get_chunk_number(ep_idx, args.chunks_size)
+            chunk_dir = dataset_root / "videos" / f"chunk-{chunk_num:03d}"
+            cam_concat_path = chunk_dir / "observation.images.cam_concatenated" / f"episode_{ep_idx:06d}.mp4"
+            if cam_concat_path.exists():
+                try:
+                    concat_info = get_video_info(cam_concat_path)
+                    concatenated_shape = (3, concat_info["height"], concat_info["width"])
+                    print(f"Successfully got shape from episode {ep_idx}: {concatenated_shape}")
+                    break
+                except Exception as e:
+                    print(f"Warning: Could not get shape from {cam_concat_path}: {e}")
+                    continue
+    
+    # If still None, infer from cam_high shape in meta/info.json
+    if concatenated_shape is None:
+        print("Attempting to infer shape from cam_high in meta/info.json...")
+        try:
+            cam_high_key = "observation.images.cam_high"
+            if cam_high_key in features:
+                cam_high_shape = features[cam_high_key].get("shape", [])
+                if len(cam_high_shape) >= 3:
+                    # shape format: [height, width, channel]
+                    high_h, high_w, high_c = int(cam_high_shape[0]), int(cam_high_shape[1]), int(cam_high_shape[2])
+                    # According to stitch logic: top_h = high_h, bottom_h = top_h // 2
+                    # total_h = top_h + bottom_h = high_h + high_h // 2
+                    total_h = high_h + (high_h // 2)
+                    concatenated_shape = (high_c, total_h, high_w)
+                    print(f"Inferred concatenated shape from cam_high [{high_h}, {high_w}, {high_c}]: {concatenated_shape}")
+                else:
+                    print(f"Warning: cam_high shape format is incorrect: {cam_high_shape}")
+            else:
+                print(f"Warning: {cam_high_key} not found in features")
+        except Exception as e:
+            print(f"Warning: Could not infer shape from meta/info.json: {e}")
     
     # Update meta/info.json with cam_concatenated feature
     if concatenated_shape is not None:

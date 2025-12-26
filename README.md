@@ -61,10 +61,11 @@
 
 ## Updates
 
-- [2025-12] **Initial release of Motus with pretrained checkpoints and training code.**
-- [x] **Simple RoboTwin inference**
-- [x] **LeRobot dataset format support**  
-- [x] **Optimized training scripts**
+- [2025-12-16] **Initial release of Motus with pretrained checkpoints and training code.**
+- [2025-12-20] **Simple RoboTwin inference**
+- [2025-12-24] **LeRobotDataset format support**  
+- [2025-12-24] **Optimized training scripts**
+- [2025-12-26] **MultiLeRobotDataset format support**
 - [ ] **RoboTwin raw dataset conversion**
 
 We welcome community members to help maintain and extend Motus. Welcome to join the Motus community and contribute together!

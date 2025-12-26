@@ -15,12 +15,24 @@ common:
 # Dataset configuration
 dataset:
   type: "lerobot"
-  max_episodes: 50
+  max_episodes: null
   image_aug: false
+  
+  # Task selection parameters
+  task_mode: "multi"      # "single" or "multi" - single task or multi task training
+  # task_name options:
+  #   - Single task: task_name: fold_towel
+  #   - Multiple specified tasks (multi mode): task_name: [fold_towel, fold_towel_0929]
+  #   - All tasks (multi mode): task_name: null
+  task_name: null # null means all tasks in the dataset or ["task1", "task2"] for specific tasks
+
   params:
     # Required: LeRobotMotusDataset needs repo_id + root to locate the local dataset
-    repo_id: "beat_block_hammer"
-    root: "/share/dataset/lerobot/robotwin/beat_block_hammer"
+    repo_id: "test_multi"
+    root: "/share/dataset/lerobot/test_multi"
+
+    # Embodiment type for loading normalization statistics (e.g., "aloha_agilex_2", "ac_one")
+    embodiment_type: "aloha_agilex_2"
 
     # When t5_embedding is missing, encode on-the-fly and cache it to {root}/t5_embedding/episode_XXXXXX.pt, also write back to meta/episodes.jsonl
     enable_t5_fallback: true
@@ -104,8 +116,16 @@ system:
   val_interval: 500     # Validate every N steps
   
   # Hardware settings
-  num_workers: 16         # Number of dataloader workers (0 = main process only, avoids memory issues)
+  num_workers: 16         # Number of dataloader workers (0 = main process only, 4-8 recommended for speed)
   pin_memory: true       # Pin memory for faster GPU transfer
+
+# Profiler settings (for performance analysis, especially dataset loading)
+profiler:
+  enable: true          # Enable torch.profiler to track dataset loading and training performance
+  interval: 100          # Profiler interval (not used directly, but kept for compatibility)
+  warmup_steps: 5        # Number of warmup steps before profiling starts
+  active_steps: 5        # Number of active profiling steps per cycle
+  repeat_steps: 1000     # Number of steps to wait before repeating profiling cycle
 
 # Logging settings  
 logging:
@@ -113,7 +133,7 @@ logging:
   report_to: "wandb"  # Options: "wandb", "tensorboard", "all", "none"
   
   # Weights & Biases settings
-  wandb_project: "latent-action-world-model"
+  wandb_project: "motus"
   
   # TensorBoard settings
   tensorboard_log_dir: "tensorboard_logs"
@@ -126,6 +146,6 @@ logging:
 resume:
   checkpoint_path: null  # Path to checkpoint to resume from
   
-# Finetune settings 
+# Finetune settings
 finetune:
-  checkpoint_path: null # (directory containing mp_rank_00_model_states.pt)
+  checkpoint_path: /share/home/bhz/test/latent_action_world_model/lawm/checkpoints/latent_action/stage2_1107/checkpoint_step_420000/pytorch_model  # (directory containing mp_rank_00_model_states.pt)
