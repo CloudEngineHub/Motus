@@ -15,6 +15,13 @@ import json
 import shutil
 import argparse
 import logging
+import multiprocessing as mp
+
+# CRITICAL: Set multiprocessing start method BEFORE any CUDA-related imports
+if __name__ == '__main__':
+    mp.set_start_method('spawn', force=True)
+
+# Now safe to import torch and other CUDA-related modules
 import torch
 import numpy as np
 import h5py
@@ -23,7 +30,6 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 from tqdm import tqdm
 import yaml
-import multiprocessing as mp
 from concurrent.futures import ProcessPoolExecutor
 
 # Set up logging
