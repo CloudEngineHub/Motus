@@ -148,4 +148,4 @@ resume:
   
 # Finetune settings
 finetune:
-  checkpoint_path: /share/home/bhz/test/latent_action_world_model/lawm/checkpoints/latent_action/stage2_1107/checkpoint_step_420000/pytorch_model  # (directory containing mp_rank_00_model_states.pt)
+  checkpoint_path: null  # (directory containing mp_rank_00_model_states.pt)
