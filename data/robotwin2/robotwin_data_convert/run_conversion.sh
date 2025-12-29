@@ -155,7 +155,7 @@ fi
 echo "Executing conversion script..."
 cd "$SCRIPT_DIR"
 
-$PYTHON_CMD robotwin_converter_new.py \
+$PYTHON_CMD robotwin_converter.py \
     --config "$CONFIG_FILE" \
     $VERBOSE_FLAG \
     2>&1 | tee "$LOG_FILE"

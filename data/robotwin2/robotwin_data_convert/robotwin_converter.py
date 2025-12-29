@@ -383,9 +383,9 @@ class RobotWinConverter:
             logger.error(f"Error creating video {output_path}: {e}")
             return False
     
-    def extract_qpos_from_hdf5(self, hdf5_path: str) -> Optional[torch.Tensor]:
+    def extract_joint_actions_from_hdf5(self, hdf5_path: str) -> Optional[torch.Tensor]:
         """
-        Extract 14-dimensional qpos data from HDF5 file
+        Extract 14-dimensional joint actions from HDF5 file
         
         Args:
             hdf5_path: Path to HDF5 file
@@ -395,31 +395,22 @@ class RobotWinConverter:
         """
         try:
             with h5py.File(hdf5_path, 'r') as hdf5_file:
-                # Try common qpos paths
-                qpos_paths = ['action/qpos', 'observation/qpos', 'qpos']
+                # Extract joint action vector (14-dim)
+                if 'joint_action/vector' in hdf5_file:
+                    qpos_data = hdf5_file['joint_action/vector'][()]
+                    qpos_tensor = torch.from_numpy(qpos_data).float()
+                    
+                    if qpos_tensor.shape[1] == 14:
+                        logger.debug(f"Extracted joint actions with shape: {qpos_tensor.shape}")
+                        return qpos_tensor
+                    else:
+                        logger.warning(f"Unexpected joint action dimensions: {qpos_tensor.shape}")
                 
-                for qpos_path in qpos_paths:
-                    if qpos_path in hdf5_file:
-                        qpos_data = hdf5_file[qpos_path][()]
-                        
-                        # Convert to tensor and ensure correct shape
-                        qpos_tensor = torch.from_numpy(qpos_data).float()
-                        
-                        # Check dimensions
-                        if len(qpos_tensor.shape) == 1:
-                            qpos_tensor = qpos_tensor.unsqueeze(0)
-                        
-                        if qpos_tensor.shape[1] == 14:
-                            logger.debug(f"Extracted qpos with shape: {qpos_tensor.shape}")
-                            return qpos_tensor
-                        else:
-                            logger.warning(f"Unexpected qpos dimensions: {qpos_tensor.shape}")
-                
-                logger.warning(f"No valid qpos data found in {hdf5_path}")
+                logger.warning(f"No valid joint_action/vector found in {hdf5_path}")
                 return None
                 
         except Exception as e:
-            logger.error(f"Error extracting qpos from {hdf5_path}: {e}")
+            logger.error(f"Error extracting joint actions from {hdf5_path}: {e}")
             return None
     
     def process_instructions(self, instruction_path: str) -> List[str]:
@@ -535,7 +526,7 @@ class RobotWinConverter:
                 return False
             
             # Extract and validate qpos
-            qpos_data = self.extract_qpos_from_hdf5(hdf5_path)
+            qpos_data = self.extract_joint_actions_from_hdf5(hdf5_path)
             if qpos_data is not None:
                 # Validate qpos trajectory - skip if any value exceeds threshold
                 if not self.validate_qpos_trajectory(qpos_data):
